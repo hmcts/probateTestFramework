@@ -1,0 +1,93 @@
+buildscript {
+    dependencies {
+        classpath('net.serenity-bdd:serenity-gradle-plugin:3.2.5')
+    }
+}
+
+plugins {
+    id 'java'
+    id 'io.qameta.allure' version '2.9.3'
+}
+
+apply plugin: 'net.serenity-bdd.aggregator'
+
+group 'com.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    allureVersion = '2.17.3'
+    fluentleniumVersion = '5.0.3'
+    junitVersion = '5.8.2'
+}
+
+sourceCompatibility = '11'
+targetCompatibility = '11'
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+dependencies {
+    implementation('org.seleniumhq.selenium:selenium-java:4.1.4')
+    implementation('net.serenity-bdd:serenity-core:3.2.5')
+    implementation('net.serenity-bdd:serenity-junit:3.2.5')
+    implementation("org.fluentlenium:fluentlenium-core:${fluentleniumVersion}")
+    implementation("org.fluentlenium:fluentlenium-assertj:${fluentleniumVersion}")
+    implementation("org.fluentlenium:fluentlenium-junit-jupiter:${fluentleniumVersion}")
+    implementation('com.epam.jdi:jdi-light-html:1.4.4')
+    implementation('io.github.bonigarcia:webdrivermanager:5.1.1')
+    implementation('org.assertj:assertj-core:3.22.0')
+    implementation('org.hamcrest:hamcrest:2.2')
+    implementation('org.slf4j:slf4j-simple:1.7.30')
+    implementation("io.cucumber:cucumber-java:7.3.4")
+    implementation("io.cucumber:cucumber-junit:7.3.4")
+    implementation("org.testng:testng:7.6.0")
+    implementation("io.cucumber:cucumber-testng:7.3.4")
+
+
+    implementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:${junitVersion}")
+}
+
+test {
+    useJUnitPlatform()
+}
+
+configurations {
+    cucumberRuntime {
+        extendsFrom implementation
+    }
+}
+task cucumberCli() {
+    dependsOn assemble, testClasses
+    doLast {
+        javaexec {
+            main = "io.cucumber.core.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = [
+                    '--plugin', 'pretty',
+                    '--plugin', 'html:target/cucumber-report.html',
+                    '--glue', 'com.baeldung.cucumber',
+                    'src/test/resources']
+        }
+    }
+}
+configurations {
+    cucumberRuntime {
+        extendsFrom testImplementation
+    }
+}
+
+allure {
+    autoconfigure = true
+    version = "${allureVersion}"
+
+    useJUnit5 {
+        version = "${allureVersion}"
+    }
+}
